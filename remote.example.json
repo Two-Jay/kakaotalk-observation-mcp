@@ -1,0 +1,10 @@
+{
+  "enabled": false,
+  "public_origin": "https://monitor.example.com",
+  "team_domain": "your-team.cloudflareaccess.com",
+  "audience": "0000000000000000000000000000000000000000000000000000000000000000",
+  "allowed_emails": ["user@example.com"],
+  "shared_policies": [],
+  "snapshot_max_age": 300,
+  "token_max_age": 3600
+}

@@ -1,0 +1,13 @@
+{
+  "keywords": ["두기"],
+  "case_sensitive": false,
+  "state_file": "data/state.sqlite3",
+  "rooms": [
+    {
+      "name": "친구 단톡방",
+      "source": "window",
+      "window_title": "친구 단톡방",
+      "history_class": "EVA_VH_ListControl_Dblclk"
+    }
+  ]
+}

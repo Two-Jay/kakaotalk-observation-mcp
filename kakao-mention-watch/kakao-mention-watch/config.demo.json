@@ -1,0 +1,5 @@
+{
+  "keywords": ["두기"],
+  "state_file": "data/demo.sqlite3",
+  "rooms": [{"name": "데모방", "source": "file", "path": "examples/chat.txt"}]
+}

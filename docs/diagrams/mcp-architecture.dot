@@ -1,0 +1,59 @@
+digraph architecture {
+  graph [rankdir=TB, bgcolor="#f7faf9", pad="0.4", nodesep="0.36", ranksep="0.65", splines=polyline,
+    fontname="Arial", fontsize=22, fontcolor="#183e43", labelloc=t,
+    label="KakaoTalk Observation MCP\nRuntime architecture & trust boundaries", compound=true];
+  node [shape=box, style="rounded,filled", fillcolor="white", color="#c7d9d5", penwidth=1.4,
+    fontname="Arial", fontsize=12, fontcolor="#203e43", margin="0.18,0.12"];
+  edge [color="#638b85", penwidth=1.3, arrowsize=0.7, fontname="Arial", fontsize=10, fontcolor="#506e70"];
+
+  agent [label="MCP-capable agent\nNo desktop-control capability required", fillcolor="#e4efec"];
+  owner [label="User's local browser\nFull management console", fillcolor="#e4efec"];
+  pickle [label="Pickle browser\nNo MCP integration", fillcolor="#fff2dd", color="#d4b87f"];
+
+  subgraph cluster_pc {
+    label="USER'S WINDOWS PC  |  collection runs in the logged-in GUI session";
+    style="rounded,filled"; color="#a8c7c1"; fillcolor="#eff6f3"; fontsize=15; margin=24;
+    mcp [label="Policy MCP adapter\nmonitor_mcp.py\nstdio tools"];
+    web [label="Local console + worker host\nweb_server.py\n127.0.0.1:8765"];
+    service [label="Shared policy service\nmonitor_service.py\nCRUD / enqueue / schedule / match", fillcolor="#cce4dd", color="#508c80"];
+    monitor [label="monitor.sqlite3\nPolicies / per-policy cursor\nJobs / mentions / audit", shape=cylinder, fillcolor="#fff"];
+    worker [label="Single sequential worker\nClaim queued job\nRun bounded child process"];
+    desktop [label="Windows collector subprocess\ncollector_demo.py + windows_collector.py\nProcess / room / focus validation"];
+    kakao [label="KakaoTalk desktop app\nRoom search / history copy / page-up", fillcolor="#fff2b9", color="#bca85e"];
+    archive [label="Transcript store\ncollector_store.py\nCheckpoint overlap + atomic TXT export"];
+    storage [label="collector.sqlite3 + TXT\nChat records / room checkpoints\nRaw conversation stays local by default", shape=cylinder];
+    publisher [label="Local summary publisher\nshare_snapshot.py\nRead-only SQLite connections"];
+    snapshot [label="summary.json\nSelected policy aliases / status\nCounts / timestamps only", shape=note, fillcolor="#fff8e8", color="#c8b078"];
+    viewer [label="Separate read-only viewer\nremote_server.py :8766\nAccess JWT required on every route\nNo DB or collector invocation", fillcolor="#fff8e8", color="#c8b078"];
+    {rank=same; mcp; web;}
+    {rank=same; desktop; archive;}
+    {rank=same; publisher; snapshot; viewer;}
+    mcp -> service [label="policy tools / check request"];
+    web -> service [label="local HTTP actions"];
+    service -> monitor [label="transactional state"];
+    monitor -> worker [label="queued jobs"];
+    web -> worker [label="hosts worker loop", style=dashed];
+    worker -> desktop [label="open + collect"];
+    desktop -> kakao [label="foreground UI control", color="#b48b3f"];
+    desktop -> archive [label="copied history / overlap check"];
+    archive -> storage [label="append records / export"];
+    storage -> service [label="scan messages after policy cursor", style=dashed];
+    worker -> service [label="result / failure / keyword matches", style=dashed, constraint=false];
+    monitor -> publisher [label="selected summaries only", style=dashed];
+    storage -> publisher [label="last collection timestamp", style=dashed];
+    publisher -> snapshot [label="atomic publish"];
+    snapshot -> viewer [label="schema + age + selection checks"];
+  }
+
+  subgraph cluster_edge {
+    label="OPTIONAL EXTERNAL ACCESS  |  requires real account/domain setup";
+    style="rounded,dashed"; color="#d4b87f"; fontcolor="#8a6b2e"; fontsize=13; margin=18;
+    access [label="Cloudflare Access + Tunnel\nApproved account / expiring session\nHTTPS hostname", fillcolor="#fff2dd", color="#d4b87f"];
+  }
+  agent -> mcp [label="local stdio MCP"];
+  owner -> web [label="loopback HTTP"];
+  pickle -> access [label="browser GET / login", color="#b48b3f"];
+  access -> viewer [label="tunnel to :8766 only\nsigned Access assertion", color="#b48b3f", style=dashed];
+  note [shape=note, label="External viewer is GET/HEAD only.\nNo chat body, sender, room name, keyword or TXT.\nNever tunnel the :8765 admin console.\nForeground collection can interrupt user input.", fillcolor="#f0f3f4", color="#cbd5d9", fontsize=11];
+  viewer -> note [style=invis];
+}

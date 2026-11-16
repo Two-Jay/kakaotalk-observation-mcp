@@ -1,0 +1,15 @@
+# Copy to cloudflared.local.yml and replace EVERY placeholder before use.
+# This publishes ONLY the isolated read-only server. Never point it at port 8765.
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: C:/REPLACE_WITH_PRIVATE_CREDENTIALS_PATH.json
+ingress:
+  - hostname: monitor.example.com
+    service: http://127.0.0.1:8766
+    originRequest:
+      httpHostHeader: monitor.example.com
+      access:
+        required: true
+        teamName: your-team
+        audTag:
+          - REPLACE_WITH_ACCESS_APPLICATION_AUD
+  - service: http_status:404

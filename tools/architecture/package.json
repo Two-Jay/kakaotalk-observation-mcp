@@ -1,0 +1,12 @@
+{
+  "name": "kakao-monitor-architecture",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "@viz-js/viz": "3.31.0"
+  }
+}

@@ -1,0 +1,27 @@
+digraph policy_lifecycle {
+  graph [rankdir=TB, bgcolor="#f7faf9", pad="0.35", nodesep="0.4", ranksep="0.55", splines=polyline,
+    fontname="Arial", fontsize=21, fontcolor="#183e43", labelloc=t,
+    label="Policy identity & queued work\nEditing one policy preserves the others"];
+  node [shape=box, style="rounded,filled", fillcolor="white", color="#b9d0cb", penwidth=1.3,
+    fontname="Arial", fontsize=12, fontcolor="#203e43", margin="0.18,0.12"];
+  edge [color="#638b85", penwidth=1.3, arrowsize=0.7, fontname="Arial", fontsize=10, fontcolor="#506e70"];
+  p [label="Policy identified by policy_id\nname / room / keywords / interval / enabled", fillcolor="#cce4dd"];
+  create [label="Create policy\nSet cursor to current message high-water mark\nHistorical messages do not trigger new mentions"];
+  schedule [label="Manual request OR scheduled due check\nAutomatic checks require BOTH global scheduler\nand policy enabled flags"];
+  queued [label="Queued job\njob_id + policy_id + immutable config snapshot\nAt most one queued/running job per policy", fillcolor="#e6eef9", color="#9db4d7"];
+  claim [label="Single worker claims job\nqueued -> running"];
+  capture [label="Capture configured room\nValidate previous tail / bounded backtrack"];
+  success [label="Save new chat records\nMatch with policy-specific cursor\nRecord mentions + completed job", fillcolor="#e2f1e7"];
+  failure [label="Collection error / coverage gap\nKeep checkpoint; log failure\nDo not interpret as 'no mentions'", fillcolor="#fae9e4", color="#d9b0a3"];
+  edit [label="Update / delete policy_id A\nOnly A's queued jobs are cancelled", fillcolor="#fff2dd", color="#d4b87f"];
+  inflight [label="A running job may finish with its old config\nIf policy changed/deleted: skip mention scan\nfor that outdated job configuration"];
+  next [label="Next scheduled/manual job\nUses updated config\nRoom/keyword change resets cursor to current records"];
+  others [label="Policies B, C ...\nTheir queues, settings and cursors stay intact", fillcolor="#e2f1e7"];
+  p -> create -> schedule -> queued -> claim -> capture;
+  capture -> success [label="overlap confirmed"];
+  capture -> failure [label="cannot confirm coverage"];
+  p -> edit [label="target exact policy_id"];
+  edit -> queued [label="cancel only waiting A jobs", style=dashed, color="#b48b3f", constraint=false];
+  edit -> inflight -> next;
+  edit -> others [label="no mutation", style=dashed];
+}
